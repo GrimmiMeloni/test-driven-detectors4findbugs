@@ -39,12 +39,14 @@ import edu.umd.cs.findbugs.Detector2;
 import edu.umd.cs.findbugs.ba.ClassContext;
 import edu.umd.cs.findbugs.ba.XClass;
 import edu.umd.cs.findbugs.ba.XFactory;
+import edu.umd.cs.findbugs.ba.XField;
 import edu.umd.cs.findbugs.ba.XMethod;
 import edu.umd.cs.findbugs.classfile.CheckedAnalysisException;
 import edu.umd.cs.findbugs.classfile.ClassDescriptor;
 import edu.umd.cs.findbugs.classfile.DescriptorFactory;
 import edu.umd.cs.findbugs.classfile.Global;
 import edu.umd.cs.findbugs.classfile.analysis.ClassInfo;
+import edu.umd.cs.findbugs.classfile.analysis.FieldInfo;
 import edu.umd.cs.findbugs.classfile.analysis.MethodInfo;
 
 
@@ -115,6 +117,15 @@ public class DetectorRunnerTest {
         assertThat(asList(myDetector.xSuperclass.getInterfaceDescriptorList()).get(0), equalTo(DescriptorFactory.createClassDescriptor(MarkerInterface.class)));
     }
     
+    @Test 
+    public void canRetrieveXFieldInfoForAReferencedApplicationClass() throws Exception {
+        BugReporter bugReporter = DetectorAssert.bugReporterForTesting();
+        MyDetector myDetector = new MyDetector();
+        DetectorAssert.assertNoBugsReported(SomeClassOfMine.class, myDetector, bugReporter);
+        
+        assertThat(myDetector.xSomeOtherClass, instanceOf(FieldInfo.class));
+    }
+    
     public static interface MarkerInterface { }
     
     public static class SuperClass implements MarkerInterface {
@@ -123,13 +134,17 @@ public class DetectorRunnerTest {
     }
     
     public static class SomeClassOfMine extends SuperClass {
+    	private SomeOtherClass aField;
         public synchronized void aMethod() {}
     }
+    
+    public static class SomeOtherClass { }
     
     public static final class MyDetector implements Detector {
 
         private XMethod xMethod;
         private XClass xSuperclass;
+        private XField xSomeOtherClass;
 
         public void report() { }
 
@@ -145,10 +160,13 @@ public class DetectorRunnerTest {
             } catch (CheckedAnalysisException e) {
                 throw new RuntimeException(e);
             }
+            
+            xSomeOtherClass = XFactory.createXField(DescriptorFactory.instance().getFieldDescriptor("com/youdevise/fbplugins/tdd4fb/DetectorRunnerTest$SomeClassOfMine", "xSomeOtherClass", "com/youdevise/fbplugins/tdd4fb/DetectorRunnerTest$SomeOtherClass", false));
         }
 
 
     }
 
 }
+
 
